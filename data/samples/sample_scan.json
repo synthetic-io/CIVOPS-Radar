@@ -1,0 +1,58 @@
+[
+  {
+    "bssid": "00:11:22:33:44:55",
+    "ssid": "HomeNetwork",
+    "capabilities": "[WPA2-PSK-CCMP][ESS]",
+    "frequency": 2412,
+    "level": -45
+  },
+  {
+    "bssid": "00:11:22:33:44:56",
+    "ssid": "FreeWiFi",
+    "capabilities": "[ESS]",
+    "frequency": 2437,
+    "level": -60
+  },
+  {
+    "bssid": "00:11:22:33:44:57",
+    "ssid": "",
+    "capabilities": "[WPA2-PSK-CCMP][ESS]",
+    "frequency": 2462,
+    "level": -70
+  },
+  {
+    "bssid": "00:11:22:33:44:58",
+    "ssid": "CoffeeShop_Guest",
+    "capabilities": "[ESS]",
+    "frequency": 2417,
+    "level": -55
+  },
+  {
+    "bssid": "00:11:22:33:44:59",
+    "ssid": "Office_WiFi",
+    "capabilities": "[WPA2-PSK-CCMP][WPS][ESS]",
+    "frequency": 2442,
+    "level": -38
+  },
+  {
+    "bssid": "00:11:22:33:44:5a",
+    "ssid": "Mobile_Hotspot",
+    "capabilities": "[WPA2-PSK-CCMP][ESS]",
+    "frequency": 2457,
+    "level": -65
+  },
+  {
+    "bssid": "00:11:22:33:44:5b",
+    "ssid": "Public_WiFi",
+    "capabilities": "[ESS]",
+    "frequency": 2422,
+    "level": -72
+  },
+  {
+    "bssid": "00:11:22:33:44:5c",
+    "ssid": "Secure_Network",
+    "capabilities": "[WPA3-SAE-CCMP][ESS]",
+    "frequency": 2472,
+    "level": -42
+  }
+]

@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CIVOPS-Radar - Wi-Fi Network Scanner</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+        }
+        
+        .radar-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .radar-screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 600px;
+            border: 2px solid #10b981;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.1) 0%, transparent 70%);
+            box-shadow: 
+                0 0 20px rgba(16, 185, 129, 0.3),
+                inset 0 0 20px rgba(16, 185, 129, 0.1);
+        }
+        
+        .radar-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 12px;
+            height: 12px;
+            background: #10b981;
+            border-radius: 50%;
+            box-shadow: 
+                0 0 15px #10b981,
+                0 0 30px rgba(16, 185, 129, 0.5);
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.2); }
+        }
+        
+        .radar-sweep {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 3px;
+            height: 300px;
+            background: linear-gradient(to top, transparent, #10b981, #10b981);
+            transform-origin: bottom center;
+            animation: sweep 4s linear infinite;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        }
+        
+        @keyframes sweep {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        
+        .range-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            border-radius: 50%;
+            animation: ringPulse 3s ease-in-out infinite;
+        }
+        
+        .range-ring:nth-child(1) { animation-delay: 0s; }
+        .range-ring:nth-child(2) { animation-delay: 1s; }
+        .range-ring:nth-child(3) { animation-delay: 2s; }
+        
+        @keyframes ringPulse {
+            0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.05); }
+        }
+        
+        .network-dot {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: dotAppear 0.5s ease-out;
+        }
+        
+        @keyframes dotAppear {
+            from { 
+                opacity: 0; 
+                transform: translate(-50%, -50%) scale(0); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translate(-50%, -50%) scale(1); 
+            }
+        }
+        
+        .network-dot:hover {
+            transform: translate(-50%, -50%) scale(1.8);
+            z-index: 10;
+            animation: dotHover 0.3s ease-out;
+        }
+        
+        @keyframes dotHover {
+            0% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(2.2); }
+            100% { transform: translate(-50%, -50%) scale(1.8); }
+        }
+        
+        .network-dot.low-risk { 
+            background: #10b981; 
+            box-shadow: 0 0 12px #10b981, 0 0 24px rgba(16, 185, 129, 0.3);
+            animation: lowRiskPulse 3s ease-in-out infinite;
+        }
+        
+        .network-dot.medium-risk { 
+            background: #f59e0b; 
+            box-shadow: 0 0 12px #f59e0b, 0 0 24px rgba(245, 158, 11, 0.3);
+            animation: mediumRiskPulse 2s ease-in-out infinite;
+        }
+        
+        .network-dot.high-risk { 
+            background: #ef4444; 
+            box-shadow: 0 0 12px #ef4444, 0 0 24px rgba(239, 68, 68, 0.3);
+            animation: highRiskPulse 1s ease-in-out infinite;
+        }
+        
+        @keyframes lowRiskPulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+        
+        @keyframes mediumRiskPulse {
+            0%, 100% { opacity: 0.9; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+        }
+        
+        @keyframes highRiskPulse {
+            0%, 100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+        }
+        
+        .network-info {
+            position: absolute;
+            background: rgba(15, 23, 42, 0.98);
+            border: 2px solid #10b981;
+            border-radius: 12px;
+            padding: 16px;
+            color: #f1f5f9;
+            font-size: 13px;
+            max-width: 220px;
+            z-index: 20;
+            display: none;
+            box-shadow: 
+                0 10px 25px rgba(0, 0, 0, 0.5),
+                0 0 20px rgba(16, 185, 129, 0.3);
+            backdrop-filter: blur(10px);
+            animation: infoSlideIn 0.3s ease-out;
+        }
+        
+        @keyframes infoSlideIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(-10px) scale(0.9); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0) scale(1); 
+            }
+        }
+        
+        .stats-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 2px solid #10b981;
+            border-radius: 12px;
+            padding: 20px;
+            color: #f1f5f9;
+            min-width: 220px;
+            box-shadow: 
+                0 10px 25px rgba(0, 0, 0, 0.3),
+                0 0 20px rgba(16, 185, 129, 0.2);
+            backdrop-filter: blur(10px);
+            animation: panelSlideIn 0.5s ease-out;
+        }
+        
+        @keyframes panelSlideIn {
+            from { 
+                opacity: 0; 
+                transform: translateX(20px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateX(0); 
+            }
+        }
+        
+        .control-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 2px solid #10b981;
+            border-radius: 12px;
+            padding: 20px;
+            color: #f1f5f9;
+            box-shadow: 
+                0 10px 25px rgba(0, 0, 0, 0.3),
+                0 0 20px rgba(16, 185, 129, 0.2);
+            backdrop-filter: blur(10px);
+            animation: panelSlideIn 0.5s ease-out 0.2s both;
+        }
+        
+        .network-list {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 2px solid #10b981;
+            border-radius: 12px;
+            padding: 20px;
+            color: #f1f5f9;
+            max-height: 450px;
+            overflow-y: auto;
+            width: 320px;
+            box-shadow: 
+                0 10px 25px rgba(0, 0, 0, 0.3),
+                0 0 20px rgba(16, 185, 129, 0.2);
+            backdrop-filter: blur(10px);
+            animation: panelSlideIn 0.5s ease-out 0.1s both;
+        }
+        
+        .network-item {
+            padding: 12px;
+            border-bottom: 1px solid rgba(16, 185, 129, 0.2);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 8px;
+            margin-bottom: 4px;
+        }
+        
+        .network-item:hover {
+            background: rgba(16, 185, 129, 0.15);
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 10px;
+            animation: statusBlink 2s ease-in-out infinite;
+        }
+        
+        .status-scanning { 
+            background: #10b981; 
+            box-shadow: 0 0 8px #10b981;
+        }
+        .status-stopped { 
+            background: #ef4444; 
+            box-shadow: 0 0 8px #ef4444;
+        }
+        .status-error { 
+            background: #f59e0b; 
+            box-shadow: 0 0 8px #f59e0b;
+        }
+        
+        @keyframes statusBlink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .button {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateY(0);
+        }
+        
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .button:active {
+            transform: translateY(0);
+        }
+        
+        .scanning-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, transparent 0%, rgba(16, 185, 129, 0.1) 100%);
+            pointer-events: none;
+            animation: scanningOverlay 2s ease-in-out infinite;
+        }
+        
+        @keyframes scanningOverlay {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.6; }
+        }
+        
+        .signal-trail {
+            position: absolute;
+            width: 2px;
+            height: 20px;
+            background: linear-gradient(to top, transparent, #10b981);
+            border-radius: 1px;
+            animation: trailFade 1s ease-out forwards;
+        }
+        
+        @keyframes trailFade {
+            from { opacity: 1; transform: scaleY(1); }
+            to { opacity: 0; transform: scaleY(0.3); }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-green-400">
+    <div class="radar-container">
+        <!-- Radar Screen -->
+        <div class="radar-screen" id="radarScreen">
+            <div class="radar-center"></div>
+            <div class="radar-sweep"></div>
+            
+            <!-- Range Rings -->
+            <div class="range-ring" style="width: 200px; height: 200px;"></div>
+            <div class="range-ring" style="width: 400px; height: 400px;"></div>
+            <div class="range-ring" style="width: 600px; height: 600px;"></div>
+            
+            <!-- Scanning Overlay -->
+            <div class="scanning-overlay" id="scanningOverlay" style="display: none;"></div>
+        </div>
+        
+        <!-- Network List -->
+        <div class="network-list" id="networkList">
+            <h3 class="text-lg font-bold mb-4 text-green-400">Detected Networks</h3>
+            <div id="networkItems"></div>
+        </div>
+        
+        <!-- Statistics Panel -->
+        <div class="stats-panel">
+            <h3 class="text-lg font-bold mb-4 text-green-400">Statistics</h3>
+            <div class="space-y-2">
+                <div class="flex justify-between">
+                    <span>Total Networks:</span>
+                    <span id="totalNetworks" class="text-green-400">0</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Active Networks:</span>
+                    <span id="activeNetworks" class="text-green-400">0</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>High Risk:</span>
+                    <span id="highRiskNetworks" class="text-red-400">0</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Open Networks:</span>
+                    <span id="openNetworks" class="text-yellow-400">0</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>Hidden Networks:</span>
+                    <span id="hiddenNetworks" class="text-blue-400">0</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Control Panel -->
+        <div class="control-panel">
+            <h3 class="text-lg font-bold mb-4 text-green-400">Controls</h3>
+            <div class="space-y-3">
+                <button id="scanButton" class="button w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-semibold">
+                    <span class="status-indicator status-scanning"></span>
+                    Start Scan
+                </button>
+                <button id="exportButton" class="button w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-semibold">
+                    Export Data
+                </button>
+                <button id="clearButton" class="button w-full bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg font-semibold">
+                    Clear Data
+                </button>
+            </div>
+            <div class="mt-4 text-sm">
+                <div>Status: <span id="statusText" class="text-green-400">Ready</span></div>
+                <div>Last Update: <span id="lastUpdate" class="text-gray-400">Never</span></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Network Info Tooltip -->
+    <div class="network-info" id="networkInfo"></div>
+
+    <script>
+        class RadarDisplay {
+            constructor() {
+                this.radarScreen = document.getElementById('radarScreen');
+                this.networkList = document.getElementById('networkItems');
+                this.networkInfo = document.getElementById('networkInfo');
+                this.scanButton = document.getElementById('scanButton');
+                this.exportButton = document.getElementById('exportButton');
+                this.clearButton = document.getElementById('clearButton');
+                
+                this.networks = new Map();
+                this.isScanning = false;
+                this.updateInterval = null;
+                
+                this.init();
+            }
+            
+            init() {
+                this.setupEventListeners();
+                this.startAutoUpdate();
+                this.updateStatistics();
+            }
+            
+            setupEventListeners() {
+                this.scanButton.addEventListener('click', () => this.toggleScan());
+                this.exportButton.addEventListener('click', () => this.exportData());
+                this.clearButton.addEventListener('click', () => this.clearData());
+            }
+            
+            async toggleScan() {
+                if (this.isScanning) {
+                    await this.stopScan();
+                } else {
+                    await this.startScan();
+                }
+            }
+            
+            async startScan() {
+                try {
+                    const response = await fetch('/api/scan/start');
+                    const data = await response.json();
+                    
+                    if (data.status === 'scan_started') {
+                        this.isScanning = true;
+                        this.scanButton.innerHTML = '<span class="status-indicator status-scanning"></span>Stop Scan';
+                        this.updateStatus('Scanning...');
+                        this.showScanningOverlay();
+                        this.createSignalTrails();
+                    }
+                } catch (error) {
+                    console.error('Failed to start scan:', error);
+                    this.updateStatus('Error starting scan');
+                }
+            }
+            
+            async stopScan() {
+                try {
+                    const response = await fetch('/api/scan/stop');
+                    const data = await response.json();
+                    
+                    if (data.status === 'scan_stopped') {
+                        this.isScanning = false;
+                        this.scanButton.innerHTML = '<span class="status-indicator status-stopped"></span>Start Scan';
+                        this.updateStatus('Stopped');
+                        this.hideScanningOverlay();
+                    }
+                } catch (error) {
+                    console.error('Failed to stop scan:', error);
+                    this.updateStatus('Error stopping scan');
+                }
+            }
+            
+            async exportData() {
+                try {
+                    const response = await fetch('/api/export/json');
+                    if (response.ok) {
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `radar_export_${new Date().toISOString().slice(0,19).replace(/:/g, '-')}.json`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        window.URL.revokeObjectURL(url);
+                        this.updateStatus('Data exported');
+                    }
+                } catch (error) {
+                    console.error('Export failed:', error);
+                    this.updateStatus('Export failed');
+                }
+            }
+            
+            async clearData() {
+                if (confirm('Are you sure you want to clear all scan data?')) {
+                    this.networks.clear();
+                    this.updateRadarDisplay();
+                    this.updateNetworkList();
+                    this.updateStatus('Data cleared');
+                }
+            }
+            
+            startAutoUpdate() {
+                this.updateInterval = setInterval(() => {
+                    this.updateSignals();
+                    this.updateStatistics();
+                }, 3000);
+            }
+            
+            async updateSignals() {
+                try {
+                    const response = await fetch('/api/signals');
+                    const data = await response.json();
+                    
+                    if (data.signals) {
+                        this.processSignals(data.signals);
+                        this.updateRadarDisplay();
+                        this.updateNetworkList();
+                        this.updateLastUpdate(data.timestamp);
+                    }
+                } catch (error) {
+                    console.error('Failed to update signals:', error);
+                }
+            }
+            
+            processSignals(signals) {
+                signals.forEach(signal => {
+                    this.networks.set(signal.bssid, signal);
+                });
+            }
+            
+            updateRadarDisplay() {
+                // Clear existing network dots
+                const existingDots = this.radarScreen.querySelectorAll('.network-dot');
+                existingDots.forEach(dot => dot.remove());
+                
+                // Add network dots
+                this.networks.forEach((network, bssid) => {
+                    const dot = this.createNetworkDot(network);
+                    this.radarScreen.appendChild(dot);
+                });
+            }
+            
+            createNetworkDot(network) {
+                return this.createNetworkDotWithAnimation(network);
+            }
+            
+            showNetworkInfo(network, event) {
+                const info = this.networkInfo;
+                info.innerHTML = `
+                    <div class="font-bold text-green-400">${network.ssid}</div>
+                    <div class="text-xs text-gray-400">${network.bssid}</div>
+                    <div class="mt-2 space-y-1">
+                        <div>Signal: ${network.level} dBm</div>
+                        <div>Distance: ${network.distance.toFixed(1)}m</div>
+                        <div>Risk: ${network.risk_score}/100</div>
+                        <div>Security: ${network.capabilities || 'Unknown'}</div>
+                        <div>Frequency: ${network.frequency} MHz</div>
+                        <div>Scans: ${network.scan_count}</div>
+                    </div>
+                `;
+                
+                info.style.left = `${event.pageX + 10}px`;
+                info.style.top = `${event.pageY - 10}px`;
+                info.style.display = 'block';
+                
+                // Hide info after 5 seconds
+                setTimeout(() => {
+                    info.style.display = 'none';
+                }, 5000);
+            }
+            
+            updateNetworkList() {
+                const networks = Array.from(this.networks.values())
+                    .sort((a, b) => b.risk_score - a.risk_score);
+                
+                this.networkList.innerHTML = networks.map(network => `
+                    <div class="network-item" data-bssid="${network.bssid}">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <div class="font-bold">${network.ssid || 'Hidden'}</div>
+                                <div class="text-xs text-gray-400">${network.bssid}</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-sm">${network.level} dBm</div>
+                                <div class="text-xs ${network.risk_score > 70 ? 'text-red-400' : network.risk_score > 30 ? 'text-yellow-400' : 'text-green-400'}">
+                                    Risk: ${network.risk_score}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                
+                // Add click events to network items
+                this.networkList.querySelectorAll('.network-item').forEach(item => {
+                    item.addEventListener('click', () => {
+                        const bssid = item.dataset.bssid;
+                        const network = this.networks.get(bssid);
+                        if (network) {
+                            // Highlight corresponding dot on radar
+                            const dot = this.radarScreen.querySelector(`[data-bssid="${bssid}"]`);
+                            if (dot) {
+                                dot.style.transform = 'translate(-50%, -50%) scale(2)';
+                                setTimeout(() => {
+                                    dot.style.transform = 'translate(-50%, -50%) scale(1)';
+                                }, 1000);
+                            }
+                        }
+                    });
+                });
+            }
+            
+            async updateStatistics() {
+                try {
+                    const response = await fetch('/api/statistics');
+                    const stats = await response.json();
+                    
+                    document.getElementById('totalNetworks').textContent = stats.total_networks || 0;
+                    document.getElementById('activeNetworks').textContent = stats.active_networks || 0;
+                    document.getElementById('highRiskNetworks').textContent = stats.high_risk_networks || 0;
+                    document.getElementById('openNetworks').textContent = stats.open_networks || 0;
+                    document.getElementById('hiddenNetworks').textContent = stats.hidden_networks || 0;
+                } catch (error) {
+                    console.error('Failed to update statistics:', error);
+                }
+            }
+            
+            updateStatus(message) {
+                document.getElementById('statusText').textContent = message;
+            }
+            
+            updateLastUpdate(timestamp) {
+                const date = new Date(timestamp);
+                document.getElementById('lastUpdate').textContent = date.toLocaleTimeString();
+            }
+            
+            showScanningOverlay() {
+                const overlay = document.getElementById('scanningOverlay');
+                overlay.style.display = 'block';
+            }
+            
+            hideScanningOverlay() {
+                const overlay = document.getElementById('scanningOverlay');
+                overlay.style.display = 'none';
+            }
+            
+            createSignalTrails() {
+                if (!this.isScanning) return;
+                
+                // Create random signal trails
+                const radarScreen = this.radarScreen;
+                const centerX = 300;
+                const centerY = 300;
+                
+                for (let i = 0; i < 3; i++) {
+                    setTimeout(() => {
+                        const trail = document.createElement('div');
+                        trail.className = 'signal-trail';
+                        
+                        // Random position around radar
+                        const angle = Math.random() * 2 * Math.PI;
+                        const distance = 100 + Math.random() * 200;
+                        const x = centerX + Math.cos(angle) * distance;
+                        const y = centerY + Math.sin(angle) * distance;
+                        
+                        trail.style.left = `${x}px`;
+                        trail.style.top = `${y}px`;
+                        trail.style.transform = `rotate(${angle * 180 / Math.PI}deg)`;
+                        
+                        radarScreen.appendChild(trail);
+                        
+                        // Remove trail after animation
+                        setTimeout(() => {
+                            if (trail.parentNode) {
+                                trail.parentNode.removeChild(trail);
+                            }
+                        }, 1000);
+                    }, i * 200);
+                }
+                
+                // Continue creating trails while scanning
+                if (this.isScanning) {
+                    setTimeout(() => this.createSignalTrails(), 2000);
+                }
+            }
+            
+            createNetworkDotWithAnimation(network) {
+                const dot = document.createElement('div');
+                dot.className = 'network-dot';
+                dot.setAttribute('data-bssid', network.bssid);
+                
+                // Determine risk level
+                let riskClass = 'low-risk';
+                if (network.risk_score > 70) riskClass = 'high-risk';
+                else if (network.risk_score > 30) riskClass = 'medium-risk';
+                
+                dot.classList.add(riskClass);
+                
+                // Position on radar
+                const centerX = 300;
+                const centerY = 300;
+                const x = centerX + (network.position.x * 300);
+                const y = centerY + (network.position.y * 300);
+                
+                dot.style.left = `${x}px`;
+                dot.style.top = `${y}px`;
+                
+                // Add click event for network info
+                dot.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.showNetworkInfo(network, e);
+                });
+                
+                // Add hover effects
+                dot.addEventListener('mouseenter', () => {
+                    dot.style.transform = 'translate(-50%, -50%) scale(1.8)';
+                });
+                
+                dot.addEventListener('mouseleave', () => {
+                    dot.style.transform = 'translate(-50%, -50%) scale(1)';
+                });
+                
+                return dot;
+            }
+        }
+        
+        // Initialize radar display when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new RadarDisplay();
+        });
+        
+        // Hide network info when clicking elsewhere
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.network-dot') && !e.target.closest('.network-info')) {
+                document.getElementById('networkInfo').style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

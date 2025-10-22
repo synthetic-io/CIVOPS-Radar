@@ -1,0 +1,48 @@
+name: Deploy CIVOPS-Radar
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flask flask-cors pandas numpy requests beautifulsoup4
+    
+    - name: Test Python syntax
+      run: |
+        python -m py_compile server/app.py
+        python -m py_compile server/risk_engine.py
+    
+    - name: Test shell scripts
+      run: |
+        bash -n termux/radar_prototype.sh
+        bash -n termux/install.sh
+
+  deploy-docs:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./
+        exclude_assets: 'data,termux,server'

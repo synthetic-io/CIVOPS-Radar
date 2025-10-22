@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CIVOPS-Radar Demo - Enhanced UI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+        }
+        
+        .radar-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .radar-screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 600px;
+            border: 2px solid #10b981;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.1) 0%, transparent 70%);
+            box-shadow: 
+                0 0 20px rgba(16, 185, 129, 0.3),
+                inset 0 0 20px rgba(16, 185, 129, 0.1);
+        }
+        
+        .radar-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 12px;
+            height: 12px;
+            background: #10b981;
+            border-radius: 50%;
+            box-shadow: 
+                0 0 15px #10b981,
+                0 0 30px rgba(16, 185, 129, 0.5);
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.2); }
+        }
+        
+        .radar-sweep {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 3px;
+            height: 300px;
+            background: linear-gradient(to top, transparent, #10b981, #10b981);
+            transform-origin: bottom center;
+            animation: sweep 4s linear infinite;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        }
+        
+        @keyframes sweep {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        
+        .range-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            border-radius: 50%;
+            animation: ringPulse 3s ease-in-out infinite;
+        }
+        
+        .range-ring:nth-child(1) { animation-delay: 0s; }
+        .range-ring:nth-child(2) { animation-delay: 1s; }
+        .range-ring:nth-child(3) { animation-delay: 2s; }
+        
+        @keyframes ringPulse {
+            0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.05); }
+        }
+        
+        .network-dot {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: dotAppear 0.5s ease-out;
+        }
+        
+        @keyframes dotAppear {
+            from { 
+                opacity: 0; 
+                transform: translate(-50%, -50%) scale(0); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translate(-50%, -50%) scale(1); 
+            }
+        }
+        
+        .network-dot:hover {
+            transform: translate(-50%, -50%) scale(1.8);
+            z-index: 10;
+            animation: dotHover 0.3s ease-out;
+        }
+        
+        @keyframes dotHover {
+            0% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(2.2); }
+            100% { transform: translate(-50%, -50%) scale(1.8); }
+        }
+        
+        .network-dot.low-risk { 
+            background: #10b981; 
+            box-shadow: 0 0 12px #10b981, 0 0 24px rgba(16, 185, 129, 0.3);
+            animation: lowRiskPulse 3s ease-in-out infinite;
+        }
+        
+        .network-dot.medium-risk { 
+            background: #f59e0b; 
+            box-shadow: 0 0 12px #f59e0b, 0 0 24px rgba(245, 158, 11, 0.3);
+            animation: mediumRiskPulse 2s ease-in-out infinite;
+        }
+        
+        .network-dot.high-risk { 
+            background: #ef4444; 
+            box-shadow: 0 0 12px #ef4444, 0 0 24px rgba(239, 68, 68, 0.3);
+            animation: highRiskPulse 1s ease-in-out infinite;
+        }
+        
+        @keyframes lowRiskPulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+        
+        @keyframes mediumRiskPulse {
+            0%, 100% { opacity: 0.9; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+        }
+        
+        @keyframes highRiskPulse {
+            0%, 100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+        }
+        
+        .demo-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 2px solid #10b981;
+            border-radius: 12px;
+            padding: 20px;
+            color: #f1f5f9;
+            min-width: 250px;
+            box-shadow: 
+                0 10px 25px rgba(0, 0, 0, 0.3),
+                0 0 20px rgba(16, 185, 129, 0.2);
+            backdrop-filter: blur(10px);
+            animation: panelSlideIn 0.5s ease-out;
+        }
+        
+        @keyframes panelSlideIn {
+            from { 
+                opacity: 0; 
+                transform: translateX(20px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateX(0); 
+            }
+        }
+        
+        .button {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateY(0);
+        }
+        
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .signal-trail {
+            position: absolute;
+            width: 2px;
+            height: 20px;
+            background: linear-gradient(to top, transparent, #10b981);
+            border-radius: 1px;
+            animation: trailFade 1s ease-out forwards;
+        }
+        
+        @keyframes trailFade {
+            from { opacity: 1; transform: scaleY(1); }
+            to { opacity: 0; transform: scaleY(0.3); }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-green-400">
+    <div class="radar-container">
+        <!-- Radar Screen -->
+        <div class="radar-screen" id="radarScreen">
+            <div class="radar-center"></div>
+            <div class="radar-sweep"></div>
+            
+            <!-- Range Rings -->
+            <div class="range-ring" style="width: 200px; height: 200px;"></div>
+            <div class="range-ring" style="width: 400px; height: 400px;"></div>
+            <div class="range-ring" style="width: 600px; height: 600px;"></div>
+        </div>
+        
+        <!-- Demo Panel -->
+        <div class="demo-panel">
+            <h3 class="text-lg font-bold mb-4 text-green-400">CIVOPS-Radar Demo</h3>
+            <div class="space-y-3">
+                <button id="addNetwork" class="button w-full bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg font-semibold">
+                    Add Random Network
+                </button>
+                <button id="clearNetworks" class="button w-full bg-red-600 hover:bg-red-700 text-white px-4 py-3 rounded-lg font-semibold">
+                    Clear Networks
+                </button>
+                <button id="startTrails" class="button w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg font-semibold">
+                    Start Signal Trails
+                </button>
+            </div>
+            <div class="mt-4 text-sm">
+                <div>Networks: <span id="networkCount" class="text-green-400">0</span></div>
+                <div>Status: <span id="statusText" class="text-green-400">Ready</span></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class RadarDemo {
+            constructor() {
+                this.radarScreen = document.getElementById('radarScreen');
+                this.networkCount = 0;
+                this.networks = [];
+                this.trailInterval = null;
+                
+                this.init();
+            }
+            
+            init() {
+                this.setupEventListeners();
+                this.addSampleNetworks();
+            }
+            
+            setupEventListeners() {
+                document.getElementById('addNetwork').addEventListener('click', () => this.addRandomNetwork());
+                document.getElementById('clearNetworks').addEventListener('click', () => this.clearNetworks());
+                document.getElementById('startTrails').addEventListener('click', () => this.startSignalTrails());
+            }
+            
+            addSampleNetworks() {
+                const sampleNetworks = [
+                    { ssid: 'HomeNetwork', bssid: '00:11:22:33:44:55', risk_score: 15, level: -45 },
+                    { ssid: 'FreeWiFi', bssid: '00:11:22:33:44:56', risk_score: 80, level: -60 },
+                    { ssid: 'Hidden', bssid: '00:11:22:33:44:57', risk_score: 45, level: -70 },
+                    { ssid: 'Office_WiFi', bssid: '00:11:22:33:44:58', risk_score: 25, level: -38 },
+                    { ssid: 'Mobile_Hotspot', bssid: '00:11:22:33:44:59', risk_score: 35, level: -65 }
+                ];
+                
+                sampleNetworks.forEach(network => {
+                    this.addNetworkToRadar(network);
+                });
+            }
+            
+            addRandomNetwork() {
+                const networks = [
+                    { ssid: 'RandomNet1', bssid: '00:11:22:33:44:60', risk_score: Math.floor(Math.random() * 100), level: -30 - Math.random() * 50 },
+                    { ssid: 'RandomNet2', bssid: '00:11:22:33:44:61', risk_score: Math.floor(Math.random() * 100), level: -30 - Math.random() * 50 },
+                    { ssid: 'RandomNet3', bssid: '00:11:22:33:44:62', risk_score: Math.floor(Math.random() * 100), level: -30 - Math.random() * 50 }
+                ];
+                
+                const network = networks[Math.floor(Math.random() * networks.length)];
+                this.addNetworkToRadar(network);
+            }
+            
+            addNetworkToRadar(network) {
+                const dot = this.createNetworkDot(network);
+                this.radarScreen.appendChild(dot);
+                this.networks.push(network);
+                this.updateNetworkCount();
+            }
+            
+            createNetworkDot(network) {
+                const dot = document.createElement('div');
+                dot.className = 'network-dot';
+                dot.setAttribute('data-bssid', network.bssid);
+                
+                // Determine risk level
+                let riskClass = 'low-risk';
+                if (network.risk_score > 70) riskClass = 'high-risk';
+                else if (network.risk_score > 30) riskClass = 'medium-risk';
+                
+                dot.classList.add(riskClass);
+                
+                // Random position on radar
+                const centerX = 300;
+                const centerY = 300;
+                const angle = Math.random() * 2 * Math.PI;
+                const distance = Math.random() * 250;
+                const x = centerX + Math.cos(angle) * distance;
+                const y = centerY + Math.sin(angle) * distance;
+                
+                dot.style.left = `${x}px`;
+                dot.style.top = `${y}px`;
+                
+                // Add click event
+                dot.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.showNetworkInfo(network, e);
+                });
+                
+                return dot;
+            }
+            
+            showNetworkInfo(network, event) {
+                const info = document.createElement('div');
+                info.style.cssText = `
+                    position: absolute;
+                    background: rgba(15, 23, 42, 0.98);
+                    border: 2px solid #10b981;
+                    border-radius: 12px;
+                    padding: 16px;
+                    color: #f1f5f9;
+                    font-size: 13px;
+                    max-width: 220px;
+                    z-index: 20;
+                    left: ${event.pageX + 10}px;
+                    top: ${event.pageY - 10}px;
+                    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 0 0 20px rgba(16, 185, 129, 0.3);
+                    backdrop-filter: blur(10px);
+                `;
+                
+                info.innerHTML = `
+                    <div class="font-bold text-green-400">${network.ssid}</div>
+                    <div class="text-xs text-gray-400">${network.bssid}</div>
+                    <div class="mt-2 space-y-1">
+                        <div>Signal: ${network.level} dBm</div>
+                        <div>Risk: ${network.risk_score}/100</div>
+                        <div>Security: WPA2-PSK</div>
+                    </div>
+                `;
+                
+                document.body.appendChild(info);
+                
+                // Remove info after 3 seconds
+                setTimeout(() => {
+                    if (info.parentNode) {
+                        info.parentNode.removeChild(info);
+                    }
+                }, 3000);
+            }
+            
+            clearNetworks() {
+                const dots = this.radarScreen.querySelectorAll('.network-dot');
+                dots.forEach(dot => dot.remove());
+                this.networks = [];
+                this.updateNetworkCount();
+            }
+            
+            startSignalTrails() {
+                if (this.trailInterval) {
+                    clearInterval(this.trailInterval);
+                    this.trailInterval = null;
+                    return;
+                }
+                
+                this.trailInterval = setInterval(() => {
+                    this.createSignalTrail();
+                }, 500);
+            }
+            
+            createSignalTrail() {
+                const trail = document.createElement('div');
+                trail.className = 'signal-trail';
+                
+                const centerX = 300;
+                const centerY = 300;
+                const angle = Math.random() * 2 * Math.PI;
+                const distance = 100 + Math.random() * 200;
+                const x = centerX + Math.cos(angle) * distance;
+                const y = centerY + Math.sin(angle) * distance;
+                
+                trail.style.left = `${x}px`;
+                trail.style.top = `${y}px`;
+                trail.style.transform = `rotate(${angle * 180 / Math.PI}deg)`;
+                
+                this.radarScreen.appendChild(trail);
+                
+                setTimeout(() => {
+                    if (trail.parentNode) {
+                        trail.parentNode.removeChild(trail);
+                    }
+                }, 1000);
+            }
+            
+            updateNetworkCount() {
+                document.getElementById('networkCount').textContent = this.networks.length;
+            }
+        }
+        
+        // Initialize demo when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new RadarDemo();
+        });
+    </script>
+</body>
+</html>
