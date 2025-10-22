@@ -28,7 +28,7 @@ git add .
 git commit -m "Initial commit: CIVOPS-Radar v1.0.0"
 
 # Add your GitHub repository as origin
-git remote add origin https://github.com/YOUR_USERNAME/CIVOPS-Radar.git
+git remote add origin https://github.com/synthetic-io/CIVOPS-Radar.git
 
 # Push to GitHub
 git push -u origin main
@@ -58,14 +58,14 @@ GITHUB_REPO="https://github.com/YOUR_USERNAME/CIVOPS-Radar.git"
 
 ```bash
 # Install CIVOPS-Radar on your phone
-curl -sSL https://raw.githubusercontent.com/YOUR_USERNAME/CIVOPS-Radar/main/termux/mobile_install.sh | bash
+curl -sSL https://raw.githubusercontent.com/synthetic-io/CIVOPS-Radar/main/termux/mobile_install.sh | bash
 ```
 
 ### Manual Installation
 
 ```bash
 # Clone repository
-git clone https://github.com/YOUR_USERNAME/CIVOPS-Radar.git ~/radar
+git clone https://github.com/synthetic-io/CIVOPS-Radar.git ~/radar
 cd ~/radar
 
 # Run installer

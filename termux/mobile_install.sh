@@ -10,7 +10,7 @@ set -euo pipefail
 
 # Configuration
 RADAR_DIR="/data/data/com.termux/files/home/radar"
-GITHUB_REPO="https://github.com/your-username/CIVOPS-Radar.git"
+GITHUB_REPO="https://github.com/synthetic-io/CIVOPS-Radar.git"
 PYTHON_VERSION="3.11"
 
 # Colors for output

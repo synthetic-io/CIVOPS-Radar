@@ -29,7 +29,7 @@ CIVOPS-Radar is an open-source, privacy-focused alternative to commercial closed
 ### Installation
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/CIVOPS-Radar.git
+git clone https://github.com/synthetic-io/CIVOPS-Radar.git
 cd CIVOPS-Radar
 
 # Run the one-command installer
@@ -130,8 +130,8 @@ MIT License - See [LICENSE](LICENSE) file for details.
 ## Support
 
 - 📖 Documentation: [docs/](docs/)
-- 🐛 Issues: [GitHub Issues](https://github.com/your-username/CIVOPS-Radar/issues)
-- 💬 Discussions: [GitHub Discussions](https://github.com/your-username/CIVOPS-Radar/discussions)
+- 🐛 Issues: [GitHub Issues](https://github.com/synthetic-io/CIVOPS-Radar/issues)
+- 💬 Discussions: [GitHub Discussions](https://github.com/synthetic-io/CIVOPS-Radar/discussions)
 
 ---
 
